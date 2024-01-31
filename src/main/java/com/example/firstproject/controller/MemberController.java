@@ -23,31 +23,49 @@ public class MemberController {
     }
 
     @GetMapping("/signup")
-    public String newMemberForm(){
+    public String newMemberForm() {
         return "members/new";
     }
 
     @PostMapping("/join")
-    public String createMember(MemberForm memberForm){
+    public String createMember(MemberForm memberForm) {
         log.info(memberForm.toString());
         Member member = memberForm.toEntity();
         log.info(member.toString());
         Member saved = memberRepository.save(member);
         log.info(saved.toString());
-        return "redirect:/members";
+        return "redirect:/members/" + saved.getId();
     }
 
     @GetMapping("/members/{id}")
-    public String show(@PathVariable Long id, Model model){
+    public String show(@PathVariable Long id, Model model) {
         Member memberEntity = memberRepository.findById(id).orElse(null);
         model.addAttribute("member", memberEntity);
         return "members/show";
     }
 
     @GetMapping("/members")
-    public String index(Model model){
+    public String index(Model model) {
         ArrayList<Member> memberEntity = memberRepository.findAll();
         model.addAttribute("members", memberEntity);
         return "members/index";
+    }
+
+    @GetMapping("/members/{id}/edit")
+    public String edit(@PathVariable Long id, Model model) {
+        Member member = memberRepository.findById(id).orElse(null);
+        model.addAttribute("member", member);
+        return "members/edit";
+
+    }
+
+    @PostMapping("/members/update")
+    public String update(MemberForm memberForm) {
+        Member member = memberForm.toEntity();
+        log.info(memberForm.toString());
+        memberRepository.save(member);
+
+
+        return "redirect:/members" + member.getId();
     }
 }
