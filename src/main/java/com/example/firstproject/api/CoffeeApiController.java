@@ -2,7 +2,7 @@ package com.example.firstproject.api;
 
 import com.example.firstproject.dto.CoffeeDto;
 import com.example.firstproject.entity.Coffee;
-import com.example.firstproject.repository.CoffeeRepository;
+import com.example.firstproject.service.CoffeeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,60 +14,45 @@ import java.util.List;
 @RestController
 public class CoffeeApiController {
 
-    private final CoffeeRepository coffeeRepository;
+    private final CoffeeService coffeeService;
 
-    public CoffeeApiController(CoffeeRepository coffeeRepository) {
-        this.coffeeRepository = coffeeRepository;
+    public CoffeeApiController(CoffeeService coffeeService) {
+        this.coffeeService = coffeeService;
     }
 
     @GetMapping("/api/coffees")
     public List<Coffee> index() {
-        return coffeeRepository.findAll();
+        return coffeeService.findAll();
     }
 
     @GetMapping("/api/coffees/{id}")
     public Coffee getCoffeeOnlyOne(@PathVariable Long id) {
-        return coffeeRepository.findById(id).orElse(null);
+        return coffeeService.getCoffee(id);
     }
 
     @PostMapping("/api/coffees")
     public ResponseEntity<Coffee> create(@RequestBody CoffeeDto coffeeDto) {
-        Coffee coffee = coffeeDto.toEntity();
-        coffeeRepository.save(coffee);
-        if (coffee.getId() != null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        Coffee created = coffeeRepository.save(coffee);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-
+        Coffee target = coffeeService.save(coffeeDto);
+        return target == null ?
+                ResponseEntity.status(HttpStatus.CREATED).build() :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
     @PatchMapping("/api/coffees/{id}")
     public ResponseEntity<Coffee> patchCoffee(@PathVariable Long id, @RequestBody CoffeeDto coffeeDto) {
-        Coffee coffee = coffeeDto.toEntity();
-        Coffee target = coffeeRepository.findById(id).orElse(null);
-
-        if (target == null || !id.equals(coffee.getId())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
-
-        target.patch(coffee);
-        Coffee updated = coffeeRepository.save(target);
-
-        return ResponseEntity.status(HttpStatus.OK).body(updated);
+        Coffee coffee = coffeeService.update(id, coffeeDto);
+        return coffee == null ? ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null) :
+                ResponseEntity.status(HttpStatus.OK).body(coffee);
     }
 
     @DeleteMapping("/api/coffees/{id}")
     public ResponseEntity<Coffee> deleteCoffee(@PathVariable Long id) {
-        Coffee coffee = coffeeRepository.findById(id).orElse(null);
 
-        if (coffee == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        } else {
-            coffeeRepository.deleteById(coffee.getId());
-            return ResponseEntity.status(HttpStatus.OK).body(coffee);
-        }
+        Coffee coffee = coffeeService.delete(id);
+
+        return coffee != null ?
+                ResponseEntity.status(HttpStatus.NO_CONTENT).build() :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
     }
 
 
